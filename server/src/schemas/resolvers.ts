@@ -1,4 +1,4 @@
-import User from '../models/User';
+import User from '../models/User.js';
 import { AuthenticationError } from 'apollo-server-express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -37,12 +37,16 @@ const resolvers = {
         throw new AuthenticationError('Incorrect credentials');
       }
 
-      const correctPw = await bcrypt.compare(password, user.password);
-      if (!correctPw) {
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
         throw new AuthenticationError('Incorrect credentials');
       }
 
-      const token = signToken(user);
+      const token = jwt.sign(
+        { _id: user._id}, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '2h' });
+        
       return { token, user };
     },
 
