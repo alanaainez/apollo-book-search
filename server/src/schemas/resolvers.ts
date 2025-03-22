@@ -1,23 +1,86 @@
 import User from '../models/User';
+import { AuthenticationError } from 'apollo-server-express';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const secret = process.env.JWT_SECRET || 'bookworm';
+const tokenExpiration = '2h';
+
+const signToken = (user: any) => {
+  return jwt.sign(
+    { _id: user._id, 
+      email: user.email, 
+      username:user.username },
+    secret,
+    { expiresIn: tokenExpiration }
+  );
+};
 
 const resolvers = {
   Query: {
-    users: async () => {
-      return await User.find();
-    },
-    user: async (_: any, { _id }: { _id: string }) => {
-      return await User.findById(_id);
+    me: async (_: any, __: any, context: any) => {
+      if (context.user) {
+        return await User.findById(context.user._id);
+      }
+      throw new AuthenticationError('Not logged in');
     },
   },
+  
   Mutation: {
-    addUser: async (_: any, { username, email }: { username: string; email: string }) => {
-      return await User.create({ username, email });
+    // User login
+    login: async (_: any, { email, password }: { email: string; password: string }) => {
+      const user = await User.findOne({ email });
+      if (!user) {
+        throw new AuthenticationError('Incorrect credentials');
+      }
+
+      const correctPw = await bcrypt.compare(password, user.password);
+      if (!correctPw) {
+        throw new AuthenticationError('Incorrect credentials');
+      }
+
+      const token = signToken(user);
+      return { token, user };
     },
-    updateUser: async (_: any, { _id, username, email }: { _id: string; username?: string; email?: string }) => {
-      return await User.findByIdAndUpdate(_id, { username, email }, { new: true });
+
+    // Register a new user
+    addUser: async (_: any, { username, email, password }: { username: string; email: string; password: string }) => {
+      const user = await User.create({ username, email, password });
+      const token = signToken(user);
+      return { token, user };
     },
-    deleteUser: async (_: any, { _id }: { _id: string }) => {
-      return await User.findByIdAndDelete(_id);
+
+    // Save a book to user's list
+    saveBook: async (_: any, { book }: { book: any }, context: any) => {
+      if (!context.user) {
+        throw new AuthenticationError('You must be logged in to save books');
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(
+        context.user._id,
+        { $addToSet: { savedBooks: book } }, // Prevents duplicates
+        { new: true }
+      );
+
+      return updatedUser;
+    },
+
+    // Remove a book from user's list
+    removeBook: async (_: any, { bookId }: { bookId: string }, context: any) => {
+      if (!context.user) {
+        throw new AuthenticationError('You must be logged in to remove books');
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(
+        context.user._id,
+        { $pull: { savedBooks: { bookId } } }, // Removes the book with the matching bookId
+        { new: true }
+      );
+
+      return updatedUser;
     },
   },
 };
