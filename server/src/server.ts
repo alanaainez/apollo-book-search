@@ -15,7 +15,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
-const secret = process.env.JWT_SECRET || 'bookworm';
+const secret = process.env.JWT_SECRET_KEY || 'bookworm';
 
 const app = express();
 

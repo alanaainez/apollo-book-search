@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const secret = process.env.JWT_SECRET || 'bookworm';
+const secret = process.env.JWT_SECRET_KEY || 'bookworm';
 const tokenExpiration = '2h';
 
 const signToken = (user: any) => {
@@ -44,9 +44,9 @@ const resolvers = {
 
       const token = jwt.sign(
         { _id: user._id}, 
-        process.env.JWT_SECRET, 
+        process.env.JWT_SECRET_KEY || 'bookworm', 
         { expiresIn: '2h' });
-        
+
       return { token, user };
     },
 
