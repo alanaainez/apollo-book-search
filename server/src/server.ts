@@ -9,8 +9,30 @@ import { typeDefs, resolvers } from './schemas/index.js';
 import db from './config/connection.js';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const PORT = process.env.PORT || 3001;
+const secret = process.env.JWT_SECRET || 'bookworm';
+
+const app = express();
+
+// Middleware to authenticate JWT and attach user to context
+const authMiddleware = async (req: Request) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Extract Bearer token
+  if (!token) return { user: null };
+
+  try {
+    const decoded = jwt.verify(token, secret);
+    return { user: decoded };
+  } catch (err) {
+    console.error('Invalid token:', err);
+    return { user: null };
+  }
+};
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -20,8 +42,6 @@ const server = new ApolloServer({
   },
   introspection: process.env.NODE_ENV !== 'production',
 });
-
-const app = express();
 
 // Create a new instance of an Apollo server with the GraphQL schema
 const startApolloServer = async () => {
@@ -43,11 +63,17 @@ const startApolloServer = async () => {
     credentials: true
   }));
 
-  // Apply Apollo Server middleware
-  app.use('/graphql', expressMiddleware(server));
-  //app.use(express.urlencoded({ extended: false }));
-  //app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
+  app.use(express.json());
 
+  // Apply Apollo Server middleware
+  app.use(
+    '/graphql',
+    expressMiddleware(server, {
+      context: async ({ req }) => authMiddleware(req),
+    })
+  );
+  
   // Error handling middleware
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     console.error(err.stack);
