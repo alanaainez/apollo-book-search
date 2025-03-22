@@ -1,19 +1,24 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-
-import { createUser } from '../utils/API';
+import { useMutation, ApolloError } from '@apollo/client';
+import { ADD_USER } from '../utils/mutations';
 import Auth from '../utils/auth';
 import type { User } from '../models/User';
 
 // biome-ignore lint/correctness/noEmptyPattern: <explanation>
 const SignupForm = ({}: { handleModalClose: () => void }) => {
   // set initial form state
-  const [userFormData, setUserFormData] = useState<User>({ username: '', email: '', password: '', savedBooks: [] });
+  const [userFormData, setUserFormData] = useState<User>({ 
+    username: '', email: '', password: '', savedBooks: [] });
   // set state for form validation
   const [validated] = useState(false);
   // set state for alert
   const [showAlert, setShowAlert] = useState(false);
+
+  const [addUser] = useMutation(ADD_USER);
+  
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -28,26 +33,29 @@ const SignupForm = ({}: { handleModalClose: () => void }) => {
     if (form.checkValidity() === false) {
       event.preventDefault();
       event.stopPropagation();
+      return;
     }
 
     try {
-      const response = await createUser(userFormData);
+      const { data } = await addUser({
+        variables: { ...userFormData },
+      });
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
-
-      const { token } = await response.json();
-      Auth.login(token);
-    } catch (err) {
-      console.error(err);
+      Auth.login(data.addUser.token);
+    } catch (err: unknown) {
+      console.error("Signup error:", err);
       setShowAlert(true);
+      if (err instanceof ApolloError && err.graphQLErrors?.[0]?.message) {
+        setErrorMessage(err.graphQLErrors[0].message);
+      } else {
+        setErrorMessage("Something went wrong with your signup!");
+      }
     }
 
     setUserFormData({
-      username: '',
-      email: '',
-      password: '',
+      username: "",
+      email: "",
+      password: "",
       savedBooks: [],
     });
   };
