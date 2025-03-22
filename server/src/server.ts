@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { Request, Response, NextFunction } from 'express';
 // Import the ApolloServer class
 import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@apollo/server/express4';
 // Import the two parts of a GraphQL schema
 import { typeDefs, resolvers } from './schemas/index.js';
 import db from './config/connection.js';
@@ -42,8 +43,10 @@ const startApolloServer = async () => {
     credentials: true
   }));
 
-  app.use(express.urlencoded({ extended: false }));
-  app.use(express.json());
+  // Apply Apollo Server middleware
+  app.use('/graphql', expressMiddleware(server));
+  //app.use(express.urlencoded({ extended: false }));
+  //app.use(express.json());
 
   // Error handling middleware
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
@@ -73,8 +76,4 @@ const startApolloServer = async () => {
   });
 };
 
-// Call the async function to start the server
-startApolloServer().catch((error) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+startApolloServer();
