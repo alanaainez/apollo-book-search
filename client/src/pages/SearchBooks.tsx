@@ -76,9 +76,9 @@ const SearchBooks = () => {
           book: {
             bookId: book.bookId,
             title: book.title,
-            authors: book.authors,
-            description: book.description,
-            image: book.image,
+            authors: book.authors || [],
+            description: book.description || "",
+            image: book.image || "",
           },
         },
       });
