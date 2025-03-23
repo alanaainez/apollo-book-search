@@ -69,38 +69,28 @@ const SearchBooks = () => {
   };
 
   // create function to handle saving a book to our database
-  const handleSaveBook = async (bookId: string) => {
-    // find the book in `searchedBooks` state by the matching id
-    const bookToSave: Book = searchedBooks.find((book) => book.bookId === bookId)!;
-
-    // get token
-    const token = Auth.loggedIn() ? Auth.getToken() : null;
-
-    if (!token) {
-      return false;
-    }
-
+  const handleSaveBook = async (book: Book) => {
     try {
       const { data } = await saveBookMutation({
         variables: {
-          bookData: {
-            bookId: bookToSave.bookId,
-            authors: bookToSave.authors,
-            title: bookToSave.title,
-            description: bookToSave.description,
-            image: bookToSave.image,
-    },
-  },
-});
-
-      if (!data) {
-        throw new Error('something went wrong!');
-      }
-
-      // if book successfully saves to user's account, save book id to state
-      setSavedBookIds([...savedBookIds, bookToSave.bookId]);
+          book: {
+            bookId: book.bookId,
+            title: book.title,
+            authors: book.authors,
+            description: book.description,
+            image: book.image,
+          },
+        },
+      });
+  
+      console.log('Book saved:', data);
+  
+      // Update local storage after successful save
+      setSavedBookIds([...savedBookIds, book.bookId]);
+      saveBookIds([...savedBookIds, book.bookId]);
+  
     } catch (err) {
-      console.error(err);
+      console.error('Error saving book:', err);
     }
   };
 

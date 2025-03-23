@@ -1,5 +1,6 @@
 import type { User } from '../models/User.js';
 import type { Book } from '../models/Book.js';
+import { gql } from '@apollo/client';
 
 // route to get logged in user's info (needs the token)
 export const getMe = (token: string) => {
@@ -32,16 +33,19 @@ export const loginUser = (userData: User) => {
 };
 
 // save book data for a logged in user
-export const saveBook = (bookData: Book, token: string) => {
-  return fetch('/api/users', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(bookData),
-  });
-};
+export const SAVE_BOOK = gql`
+  mutation SaveBook($book: BookInput!) {
+    saveBook(book: $book) {
+      _id
+      username
+      savedBooks {
+        bookId
+        title
+        authors
+        description
+      }
+    }
+  }`;
 
 // remove saved book data for a logged in user
 export const deleteBook = (bookId: string, token: string) => {
