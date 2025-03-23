@@ -6,7 +6,9 @@
     "type": "module",
     "scripts": {
       "build": "tsc",
-      "start": "node dist/server.js",
+      "start": "concurrently \"npm run server\" \"npm run client\"",
+      "server": "cd server && npm start",
+      "client": "cd client && npm start",
       "watch": "nodemon dist/server.js",
       "test": "echo \"Error: no test specified\" && exit 1"
     },
