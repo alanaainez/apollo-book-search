@@ -5,8 +5,12 @@
     "main": "server/server.js",
     "type": "module",
     "scripts": {
-        "start": "node server/dist/server.js",
+        "start": "concurrently \"npm run server\" \"npm run client\"",
+        "server": "cd server && npm start",
+        "client": "cd client && npm start",
         "develop": "concurrently \"cd server && npm run watch\" \"cd client && npm run dev\"",
+        "dev-server": "cd server && nodemon index.js",
+        "dev-client": "cd client && npm start",
         "install": "cd server && npm i && cd ../client && npm i",
         "build": "concurrently \"cd server && npm run build\" \"cd client && npm run build\"",
         "render-build": "npm install && npm run build"
