@@ -67,6 +67,7 @@ const SignupForm = ({}: { handleModalClose: () => void }) => {
         {/* show alert if server response is bad */}
         <Alert dismissible onClose={() => setShowAlert(false)} show={showAlert} variant='danger'>
           Something went wrong with your signup!
+          {errorMessage && <p>{errorMessage}</p>}
         </Alert>
 
         <Form.Group className='mb-3'>
