@@ -73,18 +73,27 @@ const resolvers = {
     },
 
     // Remove a book from user's list
-    removeBook: async (_: any, { bookId }: { bookId: string }, context: any) => {
+    removeBook: async ( { bookId }: { bookId: string }, context: any) => {
       if (!context.user) {
         throw new AuthenticationError('You must be logged in to remove books');
       }
 
-      const updatedUser = await User.findByIdAndUpdate(
-        context.user._id,
-        { $pull: { savedBooks: { bookId } } }, // Removes the book with the matching bookId
-        { new: true }
-      );
-
-      return updatedUser;
+      try {
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $pull: { savedBooks: { bookId } } },
+          { new: true }
+        );
+    
+        if (!updatedUser) {
+          throw new Error("Couldn't find user with this ID!");
+        }
+    
+        return updatedUser;
+      } catch (err) {
+        console.error('Error removing book:', err);
+        throw new Error('Failed to remove book. Please try again.');
+      }
     },
   },
 };
