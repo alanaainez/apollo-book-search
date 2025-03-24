@@ -22,16 +22,25 @@ const signToken = (user: any) => {
 const resolvers = {
   Query: {
     me: async (_: any, __: any, context: any) => {
-      if (context.user) {
-        return await User.findById(context.user._id);
+      if (!context.user) {
+        throw new AuthenticationError('Not logged in');
       }
-      throw new AuthenticationError('Not logged in');
+
+      const user = await User.findById(context.user._id).populate("savedBooks");
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      return user;
     },
   },
   
   Mutation: {
     // User login
-    login: async (_: any, { email, password }: { email: string; password: string }) => {
+    login: async (_: any, { email, password }: 
+      { email: string; password: string }) => {
+
       const user = await User.findOne({ email });
       if (!user) {
         throw new AuthenticationError('Incorrect credentials');
@@ -51,7 +60,9 @@ const resolvers = {
     },
 
     // Register a new user
-    addUser: async (_: any, { username, email, password }: { username: string; email: string; password: string }) => {
+    addUser: async (_: any, { username, email, password }: 
+      { username: string; email: string; password: string }) => {
+
       const user = await User.create({ username, email, password });
       const token = signToken(user);
       return { token, user };
@@ -67,7 +78,7 @@ const resolvers = {
         context.user._id,
         { $addToSet: { savedBooks: book } }, // Prevents duplicates
         { new: true }
-      );
+      ).populate("savedBooks");
 
       return updatedUser;
     },
@@ -83,7 +94,7 @@ const resolvers = {
           { _id: context.user._id },
           { $pull: { savedBooks: { bookId } } },
           { new: true }
-        );
+        ).populate("savedBooks");
     
         if (!updatedUser) {
           throw new Error("Couldn't find user with this ID!");
