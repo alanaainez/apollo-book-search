@@ -27,6 +27,11 @@ const SearchBooks = () => {
   const [savedBookIds] = useState(getSavedBookIds());
 
   const [saveBookMutation] = useMutation(SAVE_BOOK, {
+    context: {
+      headers: {
+        Authorization: Auth.loggedIn() ? `Bearer ${Auth.getToken()}` : "",
+      },
+    },
     refetchQueries: [{ query: GET_ME }],
   });
 
