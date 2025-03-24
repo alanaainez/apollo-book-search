@@ -73,14 +73,23 @@ const resolvers = {
       if (!context.user) {
         throw new AuthenticationError('You must be logged in to save books');
       }
-
-      const updatedUser = await User.findByIdAndUpdate(
-        context.user._id,
-        { $addToSet: { savedBooks: book } }, // Prevents duplicates
-        { new: true }
-      ).populate("savedBooks");
-
-      return updatedUser;
+    
+      try {
+        const updatedUser = await User.findByIdAndUpdate(
+          context.user._id,
+          { $addToSet: { savedBooks: book } }, // Prevents duplicates
+          { new: true }
+        );
+    
+        if (!updatedUser) {
+          throw new Error('User not found!');
+        }
+    
+        return updatedUser;
+      } catch (err) {
+        console.error('Error in saveBook resolver:', err);
+        throw new Error('Failed to save book. Please try again.');
+      }
     },
 
     // Remove a book from user's list

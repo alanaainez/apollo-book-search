@@ -10,7 +10,7 @@ import {
 } from 'react-bootstrap';
 import Auth from '../utils/auth';
 import { searchGoogleBooks } from '../utils/API';
-import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
+import { saveBookId, getSavedBookIds } from '../utils/localStorage';
 import type { Book } from '../models/Book';
 import type { GoogleAPIBook } from '../models/GoogleAPIBook';
 
@@ -24,7 +24,7 @@ const SearchBooks = () => {
   // create state for holding our search field data
   const [searchInput, setSearchInput] = useState('');
   // create state to hold saved bookId values
-  const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
+  const [savedBookIds] = useState(getSavedBookIds());
 
   const [saveBookMutation] = useMutation(SAVE_BOOK, {
     refetchQueries: [{ query: GET_ME }],
@@ -33,7 +33,7 @@ const SearchBooks = () => {
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
   useEffect(() => {
-    return () => saveBookIds(savedBookIds);
+    return () => saveBookId(savedBookIds);
   });
 
   // create method to search for books and set state on form submit
@@ -69,28 +69,30 @@ const SearchBooks = () => {
   };
 
   // create function to handle saving a book to our database
-  const handleSaveBook = async (book: Book) => {
+  const handleSaveBook = async (book: any) => {
+    const token = Auth.loggedIn() ? Auth.getToken() : null;
+    if (!token) return false;
+  
+    const bookToSave = {
+      bookId: book.id || book.bookId, // Ensure correct ID field
+      title: book.title,
+      authors: book.authors || [], // Ensure array format
+      description: book.description,
+      image: book.imageLinks?.thumbnail || '',
+      link: book.previewLink || '',
+    };
+  
+    console.log("Saving book:", bookToSave); // Debugging log
+  
     try {
       const { data } = await saveBookMutation({
-        variables: {
-          book: {
-            bookId: book.bookId,
-            title: book.title,
-            authors: book.authors || [],
-            description: book.description || "",
-            image: book.image || "",
-          },
-        },
+        variables: { book: bookToSave },
       });
   
-      console.log('Book saved:', data);
-  
-      // Update local storage after successful save
-      setSavedBookIds([...savedBookIds, book.bookId]);
-      saveBookIds([...savedBookIds, book.bookId]);
-  
+      console.log("Saved book response:", data);
+      saveBookId(bookToSave.bookId); // Save the book ID to local storage
     } catch (err) {
-      console.error('Error saving book:', err);
+      console.error("Error saving book:", err);
     }
   };
 
