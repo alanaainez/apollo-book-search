@@ -16,7 +16,6 @@ import type { GoogleAPIBook } from '../models/GoogleAPIBook';
 
 import { SAVE_BOOK } from '../utils/mutations';
 import { useMutation } from '@apollo/client';
-import { GET_ME } from '../utils/queries';
 
 const SearchBooks = () => {
   // create state for holding returned google api data
@@ -24,22 +23,9 @@ const SearchBooks = () => {
   // create state for holding our search field data
   const [searchInput, setSearchInput] = useState('');
   // create state to hold saved bookId values
-  const [savedBookIds] = useState(getSavedBookIds());
+  const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
 
-  const [saveBookMutation] = useMutation(SAVE_BOOK, {
-    context: {
-      headers: {
-        Authorization: Auth.loggedIn() ? `Bearer ${Auth.getToken()}` : "",
-      },
-    },
-    refetchQueries: [{ query: GET_ME }],
-  });
-
-  // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
-  // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
-  useEffect(() => {
-    return () => saveBookId(savedBookIds);
-  });
+  const [saveBookMutation] = useMutation(SAVE_BOOK,);
 
   // create method to search for books and set state on form submit
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -95,7 +81,9 @@ const SearchBooks = () => {
       });
   
       console.log("Saved book response:", data);
+
       saveBookId(bookToSave.bookId); // Save the book ID to local storage
+      setSavedBookIds([...savedBookIds, bookToSave.bookId]);
     } catch (err) {
       console.error("Error saving book:", err);
     }
@@ -150,7 +138,7 @@ const SearchBooks = () => {
                       <Button
                         disabled={savedBookIds?.some((savedBookId: string) => savedBookId === book.bookId)}
                         className='btn-block btn-info'
-                        onClick={() => handleSaveBook(book.bookId)}>
+                        onClick={() => handleSaveBook(book)}>
                         {savedBookIds?.some((savedBookId: string) => savedBookId === book.bookId)
                           ? 'This book has already been saved!'
                           : 'Save this Book!'}

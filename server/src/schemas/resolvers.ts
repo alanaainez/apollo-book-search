@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const secret = process.env.JWT_SECRET_KEY || 'bookworm';
+const secret = process.env.JWT_SECRET_KEY || '';
 const tokenExpiration = '2h';
 
 const signToken = (user: any) => {
@@ -40,6 +40,7 @@ const resolvers = {
     // User login
     login: async (_: any, { email, password }: 
       { email: string; password: string }) => {
+        console.log(email, password)
 
       const user = await User.findOne({ email });
       if (!user) {
@@ -53,7 +54,7 @@ const resolvers = {
 
       const token = jwt.sign(
         { _id: user._id}, 
-        process.env.JWT_SECRET_KEY || 'bookworm', 
+        process.env.JWT_SECRET_KEY || '', 
         { expiresIn: '2h' });
 
       return { token, user };

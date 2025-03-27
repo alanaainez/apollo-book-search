@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
 import dotenv from 'dotenv';
@@ -10,7 +10,7 @@ interface JwtPayload {
   email: string,
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = async ({ req, res }: {req: Request, res: Response}) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
@@ -24,7 +24,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
       }
 
       req.user = user as JwtPayload;
-      return next();
+      return req;
     });
   } else {
     res.sendStatus(401); // Unauthorized
